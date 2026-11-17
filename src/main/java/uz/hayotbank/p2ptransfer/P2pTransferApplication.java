@@ -1,4 +1,4 @@
-package com.example.p2ptransfer;
+package uz.hayotbank.p2ptransfer;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

@@ -1,0 +1,41 @@
+# Test data for local runs. The "dev" context lets a real environment skip it
+# (run with spring.liquibase.contexts=prod)
+databaseChangeLog:
+  - changeSet:
+      id: insert-dev-users
+      author: divergenny
+      context: dev
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO users (username, full_name, balance)
+              VALUES ('aziz', 'Aziz Karimov', 1000000.00),
+                     ('ivan', 'Ivan Petrov', 500000.00),
+                     ('dilnoza', 'Dilnoza Rahimova', 250000.00),
+                     ('elena', 'Elena Smirnova', 0.00);
+
+  # balances above already include the two COMPLETED transfers
+  - changeSet:
+      id: insert-dev-transfers
+      author: divergenny
+      context: dev
+      changes:
+        - sql:
+            sql: |
+              INSERT INTO transfers (reference, sender_id, recipient_id, amount, status, created_at, updated_at)
+              VALUES ('7f3c9a2e-5b1d-4e8a-9c6f-2d4b8e1a0f35',
+                      (SELECT id FROM users WHERE username = 'aziz'),
+                      (SELECT id FROM users WHERE username = 'ivan'),
+                      150000.00, 'COMPLETED', '2026-11-10 10:15:00+00', '2026-11-10 10:15:02+00');
+
+              INSERT INTO transfers (reference, sender_id, recipient_id, amount, status, created_at, updated_at)
+              VALUES ('5e2a9c41-7d3b-4f86-a1c5-9b0e6d2f4a73',
+                      (SELECT id FROM users WHERE username = 'ivan'),
+                      (SELECT id FROM users WHERE username = 'dilnoza'),
+                      50000.00, 'COMPLETED', '2026-11-12 14:30:00+00', '2026-11-12 14:30:01+00');
+
+              INSERT INTO transfers (reference, sender_id, recipient_id, amount, status, created_at, updated_at)
+              VALUES ('d94b1f07-2c6e-4a58-8f3d-71e0c5a9b2e6',
+                      (SELECT id FROM users WHERE username = 'aziz'),
+                      (SELECT id FROM users WHERE username = 'dilnoza'),
+                      300000.00, 'DECLINED', '2026-11-14 09:05:00+00', '2026-11-14 09:05:03+00');

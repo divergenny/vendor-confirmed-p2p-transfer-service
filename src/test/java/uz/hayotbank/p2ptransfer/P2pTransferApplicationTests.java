@@ -1,4 +1,4 @@
-package com.example.p2ptransfer;
+package uz.hayotbank.p2ptransfer;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

@@ -1,0 +1,81 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-transfers-table
+      author: divergenny
+      changes:
+        - createTable:
+            tableName: transfers
+            columns:
+              - column:
+                  name: id
+                  type: BIGINT
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: pk_transfers
+              # goes to the vendor as "reference", retries reuse it
+              - column:
+                  name: reference
+                  type: UUID
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: uq_transfers_reference
+              - column:
+                  name: sender_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_transfers_sender
+                    references: users(id)
+              - column:
+                  name: recipient_id
+                  type: BIGINT
+                  constraints:
+                    nullable: false
+                    foreignKeyName: fk_transfers_recipient
+                    references: users(id)
+              - column:
+                  name: amount
+                  type: NUMERIC(19, 2)
+                  constraints:
+                    nullable: false
+              # PENDING / COMPLETED / DECLINED / FAILED, see TransferStatus
+              - column:
+                  name: status
+                  type: VARCHAR(20)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: created_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: TIMESTAMP WITH TIME ZONE
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: false
+        - sql:
+            sql: |
+              ALTER TABLE transfers ADD CONSTRAINT chk_transfers_amount_positive CHECK (amount > 0);
+              ALTER TABLE transfers ADD CONSTRAINT chk_transfers_not_to_yourself CHECK (sender_id != recipient_id);
+        # for the history: a user can be on either side of a transfer
+        - createIndex:
+            tableName: transfers
+            indexName: idx_transfers_sender_created_at
+            columns:
+              - column:
+                  name: sender_id
+              - column:
+                  name: created_at
+        - createIndex:
+            tableName: transfers
+            indexName: idx_transfers_recipient_created_at
+            columns:
+              - column:
+                  name: recipient_id
+              - column:
+                  name: created_at
