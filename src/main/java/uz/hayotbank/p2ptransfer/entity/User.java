@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 @Entity
 @Table(name = "users")
@@ -35,7 +36,7 @@ public class User {
         this.fullName = fullName;
         // top-ups are out of scope, so a new user always starts from zero
         this.balance = new BigDecimal("0.00");
-        this.createdAt = Instant.now();
+        this.createdAt = Instant.now().truncatedTo(ChronoUnit.MICROS); // Postgres keeps microseconds
     }
 
     public Long getId() {

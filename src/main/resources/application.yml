@@ -6,6 +6,10 @@ spring:
     url: jdbc:postgresql://localhost:5433/p2p_transfer
     username: postgres
     password: postgres
+  web:
+    # validation messages in English whatever the OS language is
+    locale: en
+    locale-resolver: fixed
   jpa:
     open-in-view: false
     hibernate:

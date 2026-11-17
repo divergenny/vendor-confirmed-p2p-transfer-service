@@ -1,16 +1,14 @@
 package uz.hayotbank.p2ptransfer.repository;
 
-import uz.hayotbank.p2ptransfer.TestcontainersConfiguration;
-import uz.hayotbank.p2ptransfer.entity.Transfer;
-import uz.hayotbank.p2ptransfer.entity.TransferStatus;
-import uz.hayotbank.p2ptransfer.entity.User;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
+import uz.hayotbank.p2ptransfer.IntegrationTest;
+import uz.hayotbank.p2ptransfer.entity.Transfer;
+import uz.hayotbank.p2ptransfer.entity.TransferStatus;
+import uz.hayotbank.p2ptransfer.entity.User;
 
 import java.math.BigDecimal;
 
@@ -21,10 +19,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * Runs the Liquibase changelogs on a real Postgres and checks
  * the test data, the entity mapping and the constraints that protect the money.
  */
-@SpringBootTest
-@Import(TestcontainersConfiguration.class)
 @Transactional // every test is rolled back, so tests don't see each other's rows
-class DatabaseSchemaTest {
+class DatabaseSchemaTest extends IntegrationTest {
 
     @Autowired
     private UserRepository userRepository;

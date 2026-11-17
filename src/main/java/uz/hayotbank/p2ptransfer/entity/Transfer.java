@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 @Entity
@@ -39,7 +40,7 @@ public class Transfer {
     private Instant updatedAt;
 
     protected Transfer() {
-        
+
     }
 
     public Transfer(Long senderId, Long recipientId, BigDecimal amount) {
@@ -48,7 +49,7 @@ public class Transfer {
         this.recipientId = recipientId;
         this.amount = amount;
         this.status = TransferStatus.PENDING;
-        this.createdAt = Instant.now();
+        this.createdAt = Instant.now().truncatedTo(ChronoUnit.MICROS); // Postgres keeps microseconds
         this.updatedAt = this.createdAt;
     }
 

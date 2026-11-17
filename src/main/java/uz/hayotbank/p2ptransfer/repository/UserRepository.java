@@ -5,4 +5,5 @@ import uz.hayotbank.p2ptransfer.entity.User;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
+    boolean existsByUsername(String username);
 }
