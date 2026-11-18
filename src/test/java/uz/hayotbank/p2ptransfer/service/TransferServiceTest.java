@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import uz.hayotbank.p2ptransfer.dto.CreateTransferRequest;
@@ -60,7 +61,7 @@ class TransferServiceTest {
         moneyIsReserved();
         vendorAnswers(PaymentStatus.APPROVED);
 
-        TransferResponse transfer = transferService.createTransfer(request(SENDER, RECIPIENT));
+        TransferResponse transfer = transferService.createTransfer(SENDER, request(RECIPIENT));
 
         assertThat(transfer.status()).isEqualTo(TransferStatus.COMPLETED);
         verify(vendorClient).confirmPayment(savedTransfer.getReference(), SENDER, RECIPIENT, AMOUNT);
@@ -73,7 +74,7 @@ class TransferServiceTest {
         moneyIsReserved();
         vendorAnswers(PaymentStatus.DECLINED);
 
-        TransferResponse transfer = transferService.createTransfer(request(SENDER, RECIPIENT));
+        TransferResponse transfer = transferService.createTransfer(SENDER, request(RECIPIENT));
 
         assertThat(transfer.status()).isEqualTo(TransferStatus.DECLINED);
         verify(userRepository).deposit(SENDER, AMOUNT);
@@ -87,7 +88,7 @@ class TransferServiceTest {
         when(vendorClient.confirmPayment(any(), any(), any(), any()))
                 .thenThrow(new VendorRejectedRequestException(null, 400, "bad amount"));
 
-        TransferResponse transfer = transferService.createTransfer(request(SENDER, RECIPIENT));
+        TransferResponse transfer = transferService.createTransfer(SENDER, request(RECIPIENT));
 
         assertThat(transfer.status()).isEqualTo(TransferStatus.FAILED);
         verify(userRepository).deposit(SENDER, AMOUNT);
@@ -99,7 +100,7 @@ class TransferServiceTest {
         when(vendorClient.confirmPayment(any(), any(), any(), any()))
                 .thenThrow(new VendorUnavailableException(null, "timeout"));
 
-        TransferResponse transfer = transferService.createTransfer(request(SENDER, RECIPIENT));
+        TransferResponse transfer = transferService.createTransfer(SENDER, request(RECIPIENT));
 
         assertThat(transfer.status()).isEqualTo(TransferStatus.PENDING);
         verify(userRepository).withdraw(SENDER, AMOUNT);
@@ -111,7 +112,7 @@ class TransferServiceTest {
         when(userRepository.existsById(any())).thenReturn(true);
         when(userRepository.withdraw(SENDER, AMOUNT)).thenReturn(0);
 
-        assertThatThrownBy(() -> transferService.createTransfer(request(SENDER, RECIPIENT)))
+        assertThatThrownBy(() -> transferService.createTransfer(SENDER, request(RECIPIENT)))
                 .isInstanceOf(InsufficientFundsException.class);
         verifyNoInteractions(vendorClient);
         verify(transferRepository, never()).save(any());
@@ -119,7 +120,7 @@ class TransferServiceTest {
 
     @Test
     void cannotSendMoneyToYourself() {
-        assertThatThrownBy(() -> transferService.createTransfer(request(SENDER, SENDER)))
+        assertThatThrownBy(() -> transferService.createTransfer(SENDER, request(SENDER)))
                 .isInstanceOf(TransferToYourselfException.class);
         verifyNoInteractions(userRepository, transferRepository, vendorClient);
     }
@@ -129,7 +130,7 @@ class TransferServiceTest {
         when(userRepository.existsById(SENDER)).thenReturn(true);
         when(userRepository.existsById(RECIPIENT)).thenReturn(false);
 
-        assertThatThrownBy(() -> transferService.createTransfer(request(SENDER, RECIPIENT)))
+        assertThatThrownBy(() -> transferService.createTransfer(SENDER, request(RECIPIENT)))
                 .isInstanceOf(NotFoundException.class)
                 .hasMessage("User 2 not found");
         verify(userRepository, never()).withdraw(any(), any());
@@ -144,9 +145,19 @@ class TransferServiceTest {
         finishedByOthers.finish(TransferStatus.COMPLETED);
         when(transferRepository.findByIdForUpdate(any())).thenReturn(Optional.of(finishedByOthers));
 
-        transferService.createTransfer(request(SENDER, RECIPIENT));
+        transferService.createTransfer(SENDER, request(RECIPIENT));
 
         verify(userRepository, never()).deposit(any(), any());
+    }
+
+    @Test
+    void onlySenderAndRecipientSeeTransfer() {
+        when(transferRepository.findById(10L)).thenReturn(Optional.of(new Transfer(SENDER, RECIPIENT, AMOUNT)));
+
+        assertThat(transferService.getTransfer(10L, SENDER).amount()).isEqualByComparingTo(AMOUNT);
+        assertThat(transferService.getTransfer(10L, RECIPIENT).amount()).isEqualByComparingTo(AMOUNT);
+        assertThatThrownBy(() -> transferService.getTransfer(10L, 3L))
+                .isInstanceOf(AccessDeniedException.class);
     }
 
     private void moneyIsReserved() {
@@ -167,7 +178,7 @@ class TransferServiceTest {
         when(vendorClient.confirmPayment(any(), any(), any(), any())).thenReturn(answer);
     }
 
-    private CreateTransferRequest request(Long senderId, Long recipientId) {
-        return new CreateTransferRequest(senderId, recipientId, AMOUNT);
+    private CreateTransferRequest request(Long recipientId) {
+        return new CreateTransferRequest(recipientId, AMOUNT);
     }
 }

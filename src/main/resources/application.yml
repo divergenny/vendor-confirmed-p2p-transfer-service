@@ -23,6 +23,11 @@ springdoc:
   # our endpoints answer with JSON, without this the spec says */*
   default-produces-media-type: application/json
 
+jwt:
+  # signs the login tokens; the real one comes from .env, the default is only for a quick local start
+  secret: ${JWT_SECRET:dev-only-secret-change-me-0123456789}
+  ttl: 1h
+
 vendor:
   url: http://localhost:8089
   connect-timeout: 2s

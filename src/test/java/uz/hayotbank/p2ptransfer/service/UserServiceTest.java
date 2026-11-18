@@ -5,6 +5,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import uz.hayotbank.p2ptransfer.dto.CreateUserRequest;
 import uz.hayotbank.p2ptransfer.dto.UserResponse;
 import uz.hayotbank.p2ptransfer.entity.User;
@@ -17,6 +18,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -25,26 +27,32 @@ class UserServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
     @InjectMocks
     private UserService userService;
 
     @Test
     void createsUserWithZeroBalance() {
         when(userRepository.existsByUsername("bekzod")).thenReturn(false);
+        when(passwordEncoder.encode("bekzod-secret")).thenReturn("bcrypt-hash");
         when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        UserResponse user = userService.createUser(new CreateUserRequest("bekzod", "Bekzod Nazarov"));
+        UserResponse user = userService.createUser(new CreateUserRequest("bekzod", "Bekzod Nazarov", "bekzod-secret"));
 
         assertThat(user.username()).isEqualTo("bekzod");
         assertThat(user.fullName()).isEqualTo("Bekzod Nazarov");
         assertThat(user.balance()).isEqualByComparingTo("0");
+        // only the hash goes to the database
+        verify(userRepository).save(argThat(saved -> "bcrypt-hash".equals(saved.getPasswordHash())));
     }
 
     @Test
     void doesNotSaveUserWithTakenUsername() {
         when(userRepository.existsByUsername("aziz")).thenReturn(true);
 
-        assertThatThrownBy(() -> userService.createUser(new CreateUserRequest("aziz", "Aziz Karimov")))
+        assertThatThrownBy(() -> userService.createUser(new CreateUserRequest("aziz", "Aziz Karimov", "aziz-secret")))
                 .isInstanceOf(UsernameAlreadyTakenException.class)
                 .hasMessage("Username 'aziz' is already taken");
         verify(userRepository, never()).save(any());

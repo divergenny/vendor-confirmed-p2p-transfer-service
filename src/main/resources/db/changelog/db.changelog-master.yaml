@@ -7,3 +7,5 @@ databaseChangeLog:
       file: db/changelog/changes/003-dev-data.yaml
   - include:
       file: db/changelog/changes/004-pending-transfers-index.yaml
+  - include:
+      file: db/changelog/changes/005-user-passwords.yaml

@@ -5,6 +5,8 @@ import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.media.*;
 import io.swagger.v3.oas.models.responses.ApiResponse;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springdoc.core.customizers.OperationCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,8 +25,17 @@ public class OpenApiConfig {
                         .version("1.0")
                         .description("Money transfers between users. Every transfer is confirmed by an external vendor: "
                                 + "the money is reserved first and moves only after the vendor approves. "
+                                + "Log in with POST /api/auth/login and send the token as `Authorization: Bearer <token>`. "
                                 + "Errors come as RFC 9457 problem details (application/problem+json)."))
-                .components(new Components().addSchemas("ProblemDetail", problemDetailSchema()));
+                .components(new Components()
+                        .addSchemas("ProblemDetail", problemDetailSchema())
+                        // the "Authorize" button in Swagger UI: paste the accessToken from the login there
+                        .addSecuritySchemes("bearer", new SecurityScheme()
+                                .type(SecurityScheme.Type.HTTP)
+                                .scheme("bearer")
+                                .bearerFormat("JWT")))
+                // every endpoint needs the token, except the ones with an empty @SecurityRequirements
+                .addSecurityItem(new SecurityRequirement().addList("bearer"));
     }
 
     // every error has the same format, so it is set here once and not on each endpoint

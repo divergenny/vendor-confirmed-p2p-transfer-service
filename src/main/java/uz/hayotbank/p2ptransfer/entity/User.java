@@ -27,13 +27,18 @@ public class User {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    // bcrypt hash, the password itself is never stored
+    @Column(name = "password_hash", length = 100)
+    private String passwordHash;
+
     protected User() {
 
     }
 
-    public User(String username, String fullName) {
+    public User(String username, String fullName, String passwordHash) {
         this.username = username;
         this.fullName = fullName;
+        this.passwordHash = passwordHash;
         // top-ups are out of scope, so a new user always starts from zero
         this.balance = new BigDecimal("0.00");
         this.createdAt = Instant.now().truncatedTo(ChronoUnit.MICROS); // Postgres keeps microseconds
@@ -57,5 +62,9 @@ public class User {
 
     public Instant getCreatedAt() {
         return createdAt;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
     }
 }

@@ -7,12 +7,8 @@ import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
 
+// there is no senderId: the money always goes from the user of the token
 public record CreateTransferRequest(
-
-        @Schema(example = "1")
-        @NotNull
-        @Positive
-        Long senderId,
 
         @Schema(example = "2")
         @NotNull

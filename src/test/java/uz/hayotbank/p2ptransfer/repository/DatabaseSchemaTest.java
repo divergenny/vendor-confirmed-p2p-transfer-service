@@ -44,7 +44,7 @@ class DatabaseSchemaTest extends IntegrationTest {
 
     @Test
     void balanceCannotBeNegative() {
-        User user = userRepository.save(new User("negative-balance", "Negative Balance"));
+        User user = userRepository.save(new User("negative-balance", "Negative Balance", null));
 
         assertThatThrownBy(() -> jdbcTemplate.update("UPDATE users SET balance = -1 WHERE id = ?", user.getId()))
                 .isInstanceOf(DataIntegrityViolationException.class);
@@ -52,7 +52,7 @@ class DatabaseSchemaTest extends IntegrationTest {
 
     @Test
     void transferToYourselfIsRejected() {
-        User user = userRepository.save(new User("self-transfer", "Self Transfer"));
+        User user = userRepository.save(new User("self-transfer", "Self Transfer", null));
 
         assertThatThrownBy(() -> transferRepository.saveAndFlush(
                 new Transfer(user.getId(), user.getId(), new BigDecimal("10.00"))))
@@ -61,8 +61,8 @@ class DatabaseSchemaTest extends IntegrationTest {
 
     @Test
     void transferAmountMustBePositive() {
-        User sender = userRepository.save(new User("zero-sender", "Zero Sender"));
-        User recipient = userRepository.save(new User("zero-recipient", "Zero Recipient"));
+        User sender = userRepository.save(new User("zero-sender", "Zero Sender", null));
+        User recipient = userRepository.save(new User("zero-recipient", "Zero Recipient", null));
 
         assertThatThrownBy(() -> transferRepository.saveAndFlush(
                 new Transfer(sender.getId(), recipient.getId(), new BigDecimal("0.00"))))

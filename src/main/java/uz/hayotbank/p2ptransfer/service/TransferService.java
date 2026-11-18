@@ -2,6 +2,7 @@ package uz.hayotbank.p2ptransfer.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -36,20 +37,22 @@ public class TransferService {
     private final VendorClient vendorClient;
     private final TransactionTemplate transactionTemplate;
 
-    public TransferResponse createTransfer(CreateTransferRequest request) {
-        Transfer transfer = transactionTemplate.execute(status -> reserveMoney(request));
+    public TransferResponse createTransfer(Long senderId, CreateTransferRequest request) {
+        Transfer transfer = transactionTemplate.execute(status -> reserveMoney(senderId, request));
         return TransferResponse.from(confirmWithVendor(transfer));
     }
 
     @Transactional(readOnly = true)
-    public TransferResponse getTransfer(Long id) {
-        return transferRepository.findById(id)
-                .map(TransferResponse::from)
+    public TransferResponse getTransfer(Long id, Long userId) {
+        Transfer transfer = transferRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Transfer " + id + " not found"));
+        if (!transfer.getSenderId().equals(userId) && !transfer.getRecipientId().equals(userId)) {
+            throw new AccessDeniedException("Only the sender and the recipient can see transfer " + id);
+        }
+        return TransferResponse.from(transfer);
     }
 
-    private Transfer reserveMoney(CreateTransferRequest request) {
-        Long senderId = request.senderId();
+    private Transfer reserveMoney(Long senderId, CreateTransferRequest request) {
         Long recipientId = request.recipientId();
         if (senderId.equals(recipientId)) {
             throw new TransferToYourselfException();

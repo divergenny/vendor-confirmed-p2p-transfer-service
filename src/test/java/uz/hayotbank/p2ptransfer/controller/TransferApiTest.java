@@ -4,12 +4,16 @@ import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.test.web.servlet.ResultActions;
 import uz.hayotbank.p2ptransfer.IntegrationTest;
+
+import java.math.BigDecimal;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.startsWith;
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -22,9 +26,7 @@ class TransferApiTest extends IntegrationTest {
         Long recipient = createUser("0.00");
         vendorAnswers("APPROVED");
 
-        mockMvc.perform(post("/api/transfers")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(transferJson(sender, recipient, "300.00")))
+        sendTransfer(sender, recipient, "300.00")
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", startsWith("/api/transfers/")))
                 .andExpect(jsonPath("$.status").value("COMPLETED"))
@@ -47,9 +49,7 @@ class TransferApiTest extends IntegrationTest {
         Long recipient = createUser("0.00");
         vendorAnswers("DECLINED");
 
-        mockMvc.perform(post("/api/transfers")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(transferJson(sender, recipient, "300.00")))
+        sendTransfer(sender, recipient, "300.00")
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value("DECLINED"));
 
@@ -63,9 +63,7 @@ class TransferApiTest extends IntegrationTest {
         Long recipient = createUser("0.00");
         vendorFailsWith(400);
 
-        mockMvc.perform(post("/api/transfers")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(transferJson(sender, recipient, "300.00")))
+        sendTransfer(sender, recipient, "300.00")
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value("FAILED"));
 
@@ -79,9 +77,7 @@ class TransferApiTest extends IntegrationTest {
         Long recipient = createUser("0.00");
         vendorFailsWith(503);
 
-        MvcResult result = mockMvc.perform(post("/api/transfers")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(transferJson(sender, recipient, "300.00")))
+        MvcResult result = sendTransfer(sender, recipient, "300.00")
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.status").value("PENDING"))
                 .andReturn();
@@ -92,7 +88,7 @@ class TransferApiTest extends IntegrationTest {
         vendor.verify(3, postRequestedFor(urlEqualTo(VENDOR_PAYMENTS)));
 
         Number transferId = JsonPath.read(result.getResponse().getContentAsString(), "$.id");
-        mockMvc.perform(get("/api/transfers/" + transferId))
+        mockMvc.perform(get("/api/transfers/" + transferId).header(AUTHORIZATION, bearer(sender)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("PENDING"));
     }
@@ -103,9 +99,7 @@ class TransferApiTest extends IntegrationTest {
         Long recipient = createUser("0.00");
         vendorFailsOnceThenAnswers("APPROVED");
 
-        MvcResult result = mockMvc.perform(post("/api/transfers")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(transferJson(sender, recipient, "300.00")))
+        MvcResult result = sendTransfer(sender, recipient, "300.00")
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.status").value("COMPLETED"))
                 .andReturn();
@@ -121,9 +115,7 @@ class TransferApiTest extends IntegrationTest {
         Long sender = createUser("100.00");
         Long recipient = createUser("0.00");
 
-        mockMvc.perform(post("/api/transfers")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(transferJson(sender, recipient, "300.00")))
+        sendTransfer(sender, recipient, "300.00")
                 .andExpect(status().isUnprocessableContent())
                 .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
                 .andExpect(jsonPath("$.detail").value("User " + sender + " does not have enough money for this transfer"));
@@ -133,12 +125,31 @@ class TransferApiTest extends IntegrationTest {
     }
 
     @Test
+    void moneyAlwaysGoesFromTheTokenOwner() throws Exception {
+        Long sender = createUser("1000.00");
+        Long recipient = createUser("0.00");
+        vendorAnswers("APPROVED");
+        BigDecimal azizBefore = balanceOf(1L);
+
+        // an old client still sends senderId (here: aziz), it is ignored
+        mockMvc.perform(post("/api/transfers")
+                        .header(AUTHORIZATION, bearer(sender))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"senderId": 1, "recipientId": %d, "amount": 300.00}
+                                """.formatted(recipient)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.senderId").value(sender));
+
+        assertThat(balanceOf(sender)).isEqualByComparingTo("700.00");
+        assertThat(balanceOf(1L)).isEqualByComparingTo(azizBefore);
+    }
+
+    @Test
     void transferToYourselfIs400() throws Exception {
         Long user = createUser("1000.00");
 
-        mockMvc.perform(post("/api/transfers")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(transferJson(user, user, "300.00")))
+        sendTransfer(user, user, "300.00")
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.detail").value("Sender and recipient must be different users"));
     }
@@ -147,9 +158,7 @@ class TransferApiTest extends IntegrationTest {
     void unknownRecipientIs404() throws Exception {
         Long sender = createUser("1000.00");
 
-        mockMvc.perform(post("/api/transfers")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(transferJson(sender, 999999L, "300.00")))
+        sendTransfer(sender, 999999L, "300.00")
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value("User 999999 not found"));
     }
@@ -157,18 +166,19 @@ class TransferApiTest extends IntegrationTest {
     @Test
     void invalidFieldsAre400() throws Exception {
         mockMvc.perform(post("/api/transfers")
+                        .header(AUTHORIZATION, bearer(1L))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"recipientId": 2, "amount": 10.555}
+                                {"amount": 10.555}
                                 """))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errors[*].field", containsInAnyOrder("senderId", "amount")));
+                .andExpect(jsonPath("$.errors[*].field", containsInAnyOrder("recipientId", "amount")));
     }
 
     @Test
-    void returnsTransfer() throws Exception {
-        // transfer 1 comes from the dev test data: aziz -> ivan, the reference from the assignment
-        mockMvc.perform(get("/api/transfers/1"))
+    void senderSeesTransfer() throws Exception {
+        // transfer 1 comes from the dev test data: aziz (1) -> ivan (2), the reference from the assignment
+        mockMvc.perform(get("/api/transfers/1").header(AUTHORIZATION, bearer(1L)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.reference").value("7f3c9a2e-5b1d-4e8a-9c6f-2d4b8e1a0f35"))
                 .andExpect(jsonPath("$.status").value("COMPLETED"))
@@ -176,15 +186,33 @@ class TransferApiTest extends IntegrationTest {
     }
 
     @Test
+    void recipientSeesTransferToo() throws Exception {
+        mockMvc.perform(get("/api/transfers/1").header(AUTHORIZATION, bearer(2L)))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void otherUsersCannotSeeTransfer() throws Exception {
+        // dilnoza (3) has nothing to do with transfer 1
+        mockMvc.perform(get("/api/transfers/1").header(AUTHORIZATION, bearer(3L)))
+                .andExpect(status().isForbidden())
+                .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+                .andExpect(jsonPath("$.detail").value("Only the sender and the recipient can see transfer 1"));
+    }
+
+    @Test
     void unknownTransferIs404() throws Exception {
-        mockMvc.perform(get("/api/transfers/999999"))
+        mockMvc.perform(get("/api/transfers/999999").header(AUTHORIZATION, bearer(1L)))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value("Transfer 999999 not found"));
     }
 
-    private String transferJson(Long senderId, Long recipientId, String amount) {
-        return """
-                {"senderId": %d, "recipientId": %d, "amount": %s}
-                """.formatted(senderId, recipientId, amount);
+    private ResultActions sendTransfer(Long sender, Long recipient, String amount) throws Exception {
+        return mockMvc.perform(post("/api/transfers")
+                .header(AUTHORIZATION, bearer(sender))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"recipientId": %d, "amount": %s}
+                        """.formatted(recipient, amount)));
     }
 }

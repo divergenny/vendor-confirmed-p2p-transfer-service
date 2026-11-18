@@ -37,7 +37,7 @@ class ParallelTransfersTest extends IntegrationTest {
             results.add(pool.submit(() -> {
                 start.await(); // all threads go at once
                 return transferService.createTransfer(
-                        new CreateTransferRequest(sender, recipient, new BigDecimal("100.00"))).status();
+                        sender, new CreateTransferRequest(recipient, new BigDecimal("100.00"))).status();
             }));
         }
         start.countDown();

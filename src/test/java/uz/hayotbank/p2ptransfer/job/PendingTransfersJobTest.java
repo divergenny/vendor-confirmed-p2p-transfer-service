@@ -107,7 +107,7 @@ class PendingTransfersJobTest extends IntegrationTest {
     private TransferResponse pendingTransfer(Long sender, Long recipient, int minutesAgo) {
         vendorFailsWith(503);
         TransferResponse transfer = transferService.createTransfer(
-                new CreateTransferRequest(sender, recipient, new BigDecimal("300.00")));
+                sender, new CreateTransferRequest(recipient, new BigDecimal("300.00")));
         assertThat(transfer.status()).isEqualTo(TransferStatus.PENDING);
         jdbcTemplate.update("UPDATE transfers SET created_at = now() - ? * interval '1 minute' WHERE id = ?",
                 minutesAgo, transfer.id());

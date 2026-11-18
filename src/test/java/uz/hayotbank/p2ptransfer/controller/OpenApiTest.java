@@ -24,6 +24,17 @@ class OpenApiTest extends IntegrationTest {
     }
 
     @Test
+    void specAsksForTokenExceptRegistrationAndLogin() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.components.securitySchemes.bearer.scheme").value("bearer"))
+                .andExpect(jsonPath("$.security[0].bearer").isArray())
+                .andExpect(jsonPath("$.paths['/api/auth/login'].post.security").isEmpty())
+                .andExpect(jsonPath("$.paths['/api/users'].post.security").isEmpty())
+                .andExpect(jsonPath("$.paths['/api/transfers'].post.security").doesNotExist());
+    }
+
+    @Test
     void swaggerUiIsServed() throws Exception {
         mockMvc.perform(get("/swagger-ui/index.html"))
                 .andExpect(status().isOk());

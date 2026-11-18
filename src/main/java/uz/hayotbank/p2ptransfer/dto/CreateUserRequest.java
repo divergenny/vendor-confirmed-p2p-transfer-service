@@ -16,6 +16,12 @@ public record CreateUserRequest(
         @Schema(example = "Bekzod Nazarov")
         @NotBlank
         @Size(max = 100)
-        String fullName
+        String fullName,
+
+        // bcrypt only looks at the first 72 bytes, so a longer password would be cut silently
+        @Schema(example = "bekzod-secret")
+        @NotBlank
+        @Size(min = 8, max = 72)
+        String password
 ) {
 }

@@ -6,10 +6,13 @@ import org.springframework.data.jpa.repository.Query;
 import uz.hayotbank.p2ptransfer.entity.User;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByUsername(String username);
+
+    Optional<User> findByUsername(String username);
 
     // check and withdraw in one UPDATE, so two parallel transfers can't spend the same money
     @Modifying

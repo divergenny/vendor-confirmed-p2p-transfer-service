@@ -1,6 +1,7 @@
 package uz.hayotbank.p2ptransfer.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import uz.hayotbank.p2ptransfer.dto.CreateUserRequest;
@@ -15,6 +16,7 @@ import uz.hayotbank.p2ptransfer.repository.UserRepository;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Transactional
     public UserResponse createUser(CreateUserRequest request) {
@@ -22,7 +24,8 @@ public class UserService {
         if (userRepository.existsByUsername(request.username())) {
             throw new UsernameAlreadyTakenException(request.username());
         }
-        User user = userRepository.save(new User(request.username(), request.fullName()));
+        String passwordHash = passwordEncoder.encode(request.password());
+        User user = userRepository.save(new User(request.username(), request.fullName(), passwordHash));
         return UserResponse.from(user);
     }
 

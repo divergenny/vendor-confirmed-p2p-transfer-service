@@ -11,6 +11,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import uz.hayotbank.p2ptransfer.security.TokenService;
 
 import java.math.BigDecimal;
 import java.util.UUID;
@@ -42,6 +43,9 @@ public abstract class IntegrationTest {
 
     @Autowired
     protected JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    private TokenService tokenService;
 
     @DynamicPropertySource
     static void testProperties(DynamicPropertyRegistry registry) {
@@ -85,6 +89,11 @@ public abstract class IntegrationTest {
 
     protected BigDecimal balanceOf(Long userId) {
         return jdbcTemplate.queryForObject("SELECT balance FROM users WHERE id = ?", BigDecimal.class, userId);
+    }
+
+    // the Authorization header of a user who has logged in
+    protected String bearer(Long userId) {
+        return "Bearer " + tokenService.createToken(userId, "user-" + userId).accessToken();
     }
 
     // like the real vendor, the stub answers with the reference it got in the request
