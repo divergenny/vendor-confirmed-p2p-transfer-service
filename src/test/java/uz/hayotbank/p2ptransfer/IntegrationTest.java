@@ -44,11 +44,13 @@ public abstract class IntegrationTest {
     protected JdbcTemplate jdbcTemplate;
 
     @DynamicPropertySource
-    static void vendorProperties(DynamicPropertyRegistry registry) {
+    static void testProperties(DynamicPropertyRegistry registry) {
         registry.add("vendor.url", vendor::baseUrl);
         // tests don't want to wait 12 s for a timeout
         registry.add("vendor.read-timeout", () -> "1s");
         registry.add("vendor.retry-delay", () -> "10ms");
+        // the retry job is called by hand in its own test
+        registry.add("transfers.pending-retry.enabled", () -> "false");
     }
 
     @BeforeEach

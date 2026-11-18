@@ -64,7 +64,12 @@ public class TransferService {
         return transferRepository.save(transfer);
     }
 
-    private Transfer confirmWithVendor(Transfer transfer) {
+    /**
+     * Asks the vendor about a PENDING transfer and applies the answer.
+     * Used by the request itself and later by the retry job: the reference is always the same,
+     * so the vendor never creates a second payment.
+     */
+    public Transfer confirmWithVendor(Transfer transfer) {
         PaymentStatus answer;
         try {
             answer = vendorClient.confirmPayment(transfer.getReference(), transfer.getSenderId(),

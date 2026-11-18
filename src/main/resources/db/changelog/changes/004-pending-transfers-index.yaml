@@ -1,0 +1,8 @@
+databaseChangeLog:
+  - changeSet:
+      id: create-pending-transfers-index
+      author: divergenny
+      changes:
+        # the retry job reads only PENDING transfers, so the index keeps only them and stays tiny
+        - sql:
+            sql: CREATE INDEX idx_transfers_pending_created_at ON transfers (created_at) WHERE status = 'PENDING'

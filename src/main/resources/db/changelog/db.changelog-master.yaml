@@ -5,3 +5,5 @@ databaseChangeLog:
       file: db/changelog/changes/002-create-transfers.yaml
   - include:
       file: db/changelog/changes/003-dev-data.yaml
+  - include:
+      file: db/changelog/changes/004-pending-transfers-index.yaml

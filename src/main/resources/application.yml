@@ -23,3 +23,12 @@ vendor:
   read-timeout: 12s
   max-attempts: 3
   retry-delay: 500ms
+
+transfers:
+  pending-retry:
+    enabled: true
+    # how often the job looks for transfers that are still PENDING
+    interval: 1m
+    # fresh ones are left alone: the request itself may still be asking the vendor (up to ~37 s)
+    older-than: 2m
+    batch-size: 100
