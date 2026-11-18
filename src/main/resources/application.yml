@@ -15,3 +15,11 @@ spring:
     hibernate:
       # schema is owned by Liquibase, Hibernate only checks that entities match it
       ddl-auto: validate
+
+vendor:
+  url: http://localhost:8089
+  connect-timeout: 2s
+  # the vendor answers within 10 s, so we wait a bit longer than that
+  read-timeout: 12s
+  max-attempts: 3
+  retry-delay: 500ms
