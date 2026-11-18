@@ -1,0 +1,15 @@
+{
+  "priority": 10,
+  "request": {
+    "method": "POST",
+    "url": "/api/v1/payments"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": "{\"reference\": \"{{jsonPath request.body '$.reference'}}\", \"status\": \"APPROVED\"}",
+    "transformers": ["response-template"]
+  }
+}

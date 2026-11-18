@@ -1,11 +1,14 @@
 spring:
+  config:
+    # the same .env as docker compose reads, so the app started from the IDE gets the same credentials
+    import: optional:file:.env[.properties]
   application:
     name: vendor-confirmed-p2p-transfer-service
   datasource:
     # local Postgres from docker-compose
-    url: jdbc:postgresql://localhost:5433/p2p_transfer
-    username: postgres
-    password: postgres
+    url: jdbc:postgresql://localhost:5433/${DB_NAME:p2p_transfer}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
   web:
     # validation messages in English whatever the OS language is
     locale: en
