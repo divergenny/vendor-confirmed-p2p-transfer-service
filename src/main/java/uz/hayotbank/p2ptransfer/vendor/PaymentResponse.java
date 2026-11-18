@@ -6,5 +6,8 @@ import java.util.UUID;
 
 // the vendor may add new fields to the answer, that must not break us
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record PaymentResponse(UUID reference, PaymentStatus status) {
+public record PaymentResponse(
+        UUID reference,
+        PaymentStatus status
+) {
 }

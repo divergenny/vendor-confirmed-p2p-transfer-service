@@ -47,10 +47,24 @@ public class Transfer {
         this.reference = UUID.randomUUID();
         this.senderId = senderId;
         this.recipientId = recipientId;
-        this.amount = amount;
+        // 150000 and 150000.00 are the same money, but the vendor always gets it as 150000.00
+        this.amount = amount.setScale(2);
         this.status = TransferStatus.PENDING;
-        this.createdAt = Instant.now().truncatedTo(ChronoUnit.MICROS); // Postgres keeps microseconds
+        this.createdAt = now();
         this.updatedAt = this.createdAt;
+    }
+
+    public boolean isPending() {
+        return status == TransferStatus.PENDING;
+    }
+
+    public void finish(TransferStatus result) {
+        this.status = result;
+        this.updatedAt = now();
+    }
+
+    private static Instant now() {
+        return Instant.now().truncatedTo(ChronoUnit.MICROS); // Postgres keeps microseconds
     }
 
     public Long getId() {

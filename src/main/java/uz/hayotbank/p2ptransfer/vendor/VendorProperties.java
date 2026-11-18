@@ -11,10 +11,19 @@ import java.time.Duration;
 @Validated
 @ConfigurationProperties("vendor")
 public record VendorProperties(
-        @NotBlank String url,
-        @NotNull Duration connectTimeout,
-        @NotNull Duration readTimeout,
-        @Min(1) int maxAttempts,
-        @NotNull Duration retryDelay
+        @NotBlank
+        String url,
+
+        @NotNull
+        Duration connectTimeout,
+
+        @NotNull
+        Duration readTimeout,
+
+        @Min(1)
+        int maxAttempts,
+
+        @NotNull
+        Duration retryDelay
 ) {
 }
