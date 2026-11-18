@@ -32,3 +32,6 @@ transfers:
     # fresh ones are left alone: the request itself may still be asking the vendor (up to ~37 s)
     older-than: 2m
     batch-size: 100
+  history:
+    # a day in the history is a day in the bank's time zone, not in the server's one
+    time-zone: Asia/Tashkent

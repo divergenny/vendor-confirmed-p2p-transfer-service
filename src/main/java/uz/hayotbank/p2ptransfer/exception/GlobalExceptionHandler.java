@@ -1,14 +1,18 @@
 package uz.hayotbank.p2ptransfer.exception;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.MessageSourceResolvable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.*;
+import org.springframework.validation.method.ParameterValidationResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -34,6 +38,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 
+    @ExceptionHandler(InvalidPeriodException.class)
+    public ProblemDetail handleInvalidPeriod(InvalidPeriodException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
     // the request is fine, but the balance doesn't allow it right now
     @ExceptionHandler(InsufficientFundsException.class)
     public ProblemDetail handleInsufficientFunds(InsufficientFundsException e) {
@@ -55,16 +64,35 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .map(error -> new FieldViolation(error.getField(), error.getDefaultMessage()))
                 .toList();
 
-        ProblemDetail problem = ex.getBody();
-        problem.setDetail("Validation failed");
-        problem.setProperty("errors", errors);
-        return handleExceptionInternal(ex, problem, headers, status, request);
+        return handleExceptionInternal(ex, validationFailed(ex.getBody(), errors), headers, status, request);
+    }
+
+    // the same "errors" list for invalid request parameters, e.g. ?size=500
+    @Override
+    protected ResponseEntity<Object> handleHandlerMethodValidationException(
+            HandlerMethodValidationException ex, HttpHeaders headers,
+            HttpStatusCode status, WebRequest request) {
+        List<FieldViolation> errors = new ArrayList<>();
+        for (ParameterValidationResult result : ex.getParameterValidationResults()) {
+            String parameter = result.getMethodParameter().getParameterName();
+            for (MessageSourceResolvable error : result.getResolvableErrors()) {
+                errors.add(new FieldViolation(parameter, error.getDefaultMessage()));
+            }
+        }
+
+        return handleExceptionInternal(ex, validationFailed(ex.getBody(), errors), headers, status, request);
     }
 
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleUnexpected(Exception e) {
         log.error("Unexpected error", e);
         return ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error");
+    }
+
+    private ProblemDetail validationFailed(ProblemDetail problem, List<FieldViolation> errors) {
+        problem.setDetail("Validation failed");
+        problem.setProperty("errors", errors);
+        return problem;
     }
 
     public record FieldViolation(String field, String message) {
