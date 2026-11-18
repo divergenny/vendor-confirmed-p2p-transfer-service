@@ -67,7 +67,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return handleExceptionInternal(ex, validationFailed(ex.getBody(), errors), headers, status, request);
     }
 
-    // the same "errors" list for invalid request parameters, e.g. ?size=500
+    // the same "errors" list for invalid request parameters, size=500
     @Override
     protected ResponseEntity<Object> handleHandlerMethodValidationException(
             HandlerMethodValidationException ex, HttpHeaders headers,
