@@ -19,6 +19,10 @@ spring:
       # schema is owned by Liquibase, Hibernate only checks that entities match it
       ddl-auto: validate
 
+springdoc:
+  # our endpoints answer with JSON, without this the spec says */*
+  default-produces-media-type: application/json
+
 vendor:
   url: http://localhost:8089
   connect-timeout: 2s
