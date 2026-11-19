@@ -6,17 +6,18 @@
 
 <br><br>
 
-![Java](https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
-![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.1-6DB33F?style=for-the-badge&logo=springboot&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
-![Liquibase](https://img.shields.io/badge/Liquibase-5-2962FF?style=for-the-badge&logo=liquibase&logoColor=white)
-![Maven](https://img.shields.io/badge/Build-Maven-C71A36?style=for-the-badge&logo=apachemaven&logoColor=white)
+[![Tests](https://img.shields.io/github/actions/workflow/status/divergenny/vendor-confirmed-p2p-transfer-service/ci.yml?branch=main&style=for-the-badge&logo=githubactions&logoColor=white&label=tests)](https://github.com/divergenny/vendor-confirmed-p2p-transfer-service/actions/workflows/ci.yml)  
+![Java](https://img.shields.io/badge/Java-21-ED8B00?style=flat&logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring_Boot-4.1-6DB33F?style=flat&logo=springboot&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?style=flat&logo=postgresql&logoColor=white)
+![Liquibase](https://img.shields.io/badge/Liquibase-5-2962FF?style=flat&logo=liquibase&logoColor=white)
+![Maven](https://img.shields.io/badge/Build-Maven-C71A36?style=flat&logo=apachemaven&logoColor=white)
 <br>
-![Docker](https://img.shields.io/badge/Docker-compose-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-![Testcontainers](https://img.shields.io/badge/Testcontainers-2-291A3F?style=for-the-badge&logo=testcontainers&logoColor=white)
-![WireMock](https://img.shields.io/badge/WireMock-3.13-3F4F5F?style=for-the-badge)
-![JWT](https://img.shields.io/badge/JWT-HS256-000000?style=for-the-badge&logo=jsonwebtokens&logoColor=white)
-![Swagger](https://img.shields.io/badge/OpenAPI-Swagger_UI-85EA2D?style=for-the-badge&logo=swagger&logoColor=black)
+![Docker](https://img.shields.io/badge/Docker-compose-2496ED?style=flat&logo=docker&logoColor=white)
+![Testcontainers](https://img.shields.io/badge/Testcontainers-2-291A3F?style=flat&logo=testcontainers&logoColor=white)
+![WireMock](https://img.shields.io/badge/WireMock-3.13-3F4F5F?style=flat)
+![JWT](https://img.shields.io/badge/JWT-HS256-000000?style=flat&logo=jsonwebtokens&logoColor=white)
+![Swagger](https://img.shields.io/badge/OpenAPI-Swagger_UI-85EA2D?style=flat&logo=swagger&logoColor=black)
 
 <br>
 
@@ -176,6 +177,7 @@
 | ✅ | docker-compose одной командой: приложение, PostgreSQL, заглушка вендора | `docker compose up --build`, заглушка на WireMock |
 | ⭐ | Аутентификация через JWT | вход по логину и паролю, токен HS256, каждый видит только свои данные |
 | ⭐ | OpenAPI/Swagger | Swagger UI с примерами и кнопкой Authorize |
+| ➕ | Сверх задания: CI | GitHub Actions на каждый пуш и pull request: сборка и все 81 тест, бейдж в начале README |
 
 <a id="ru-stack" name="ru-stack"></a>
 
@@ -189,7 +191,7 @@
 | Безопасность | Spring Security OAuth2 Resource Server: JWT (HS256), пароли в bcrypt |
 | Документация API | springdoc-openapi 3, Swagger UI |
 | Тесты | JUnit 6, Mockito, AssertJ, Testcontainers 2, WireMock 3.13 |
-| Сборка и запуск | Maven Wrapper, Docker (multi-stage), Docker Compose |
+| Сборка и запуск | Maven Wrapper, Docker (multi-stage), Docker Compose, CI в GitHub Actions |
 
 <a id="ru-run" name="ru-run"></a>
 
@@ -301,6 +303,8 @@ docker compose up -d postgres vendor-stub
 | `OpenApiTest` | интеграционный | спецификация OpenAPI и Swagger UI |
 
 Интеграционные тесты работают с настоящей PostgreSQL 17 в Docker, а вендора подменяет WireMock на случайном порту. В каждом тесте у него своё поведение: одобрить, отклонить, ответить 503 или не ответить дольше таймаута.
+
+**CI.** Те же 81 тест запускаются в GitHub Actions на каждый пуш в `main` и на каждый pull request (`.github/workflows/ci.yml`): Ubuntu, JDK 21, команда `./mvnw -B -ntp verify`. Docker для Testcontainers там уже есть. Результат последнего прогона – на бейдже «tests» в начале README. Если тесты упали, их отчёты сохраняются в артефакт `test-reports`.
 
 <a id="ru-api" name="ru-api"></a>
 
@@ -904,6 +908,7 @@ Content-Type: application/json
 
 ```text
 .
+├── .github/workflows/ci.yml    # CI: сборка и тесты на каждый пуш
 ├── Dockerfile                  # multi-stage: сборка Maven → образ с JRE
 ├── docker-compose.yml          # приложение + PostgreSQL + заглушка вендора
 ├── .env.example                # пример локальных паролей и секрета
@@ -947,6 +952,7 @@ Content-Type: application/json
 | 9 | OpenAPI и Swagger UI | `feat: add openapi spec and swagger ui` |
 | 10 | JWT-аутентификация | `feat: add jwt authentication` |
 | 11 | этот README | `docs: add readme` |
+| 12 | CI: сборка и тесты в GitHub Actions | `ci: add github actions workflow` |
 
 <div align="right"><a href="#top">⬆️ Наверх</a></div>
 
@@ -989,6 +995,7 @@ Content-Type: application/json
 | ✅ | docker-compose bitta buyruq bilan: ilova, PostgreSQL, vendor imitatsiyasi | `docker compose up --build`, imitatsiya WireMock’da |
 | ⭐ | JWT orqali autentifikatsiya | login va parol bilan kirish, HS256 token, har kim faqat oʻz maʼlumotlarini koʻradi |
 | ⭐ | OpenAPI/Swagger | misollar va Authorize tugmasi bilan Swagger UI |
+| ➕ | Topshiriqdan tashqari: CI | har bir push va pull request’da GitHub Actions: yigʻish va barcha 81 ta test, README boshida beydj |
 
 <a id="uz-stack" name="uz-stack"></a>
 
@@ -1002,7 +1009,7 @@ Content-Type: application/json
 | Xavfsizlik | Spring Security OAuth2 Resource Server: JWT (HS256), parollar bcrypt’da |
 | API hujjatlari | springdoc-openapi 3, Swagger UI |
 | Testlar | JUnit 6, Mockito, AssertJ, Testcontainers 2, WireMock 3.13 |
-| Yigʻish va ishga tushirish | Maven Wrapper, Docker (multi-stage), Docker Compose |
+| Yigʻish va ishga tushirish | Maven Wrapper, Docker (multi-stage), Docker Compose, GitHub Actions’da CI |
 
 <a id="uz-run" name="uz-run"></a>
 
@@ -1114,6 +1121,8 @@ Git Bash’siz Windows’da: `mvnw.cmd test`. Jami **81 ta test**, toʻliq ishga
 | `OpenApiTest` | integratsion | OpenAPI spetsifikatsiyasi va Swagger UI |
 
 Integratsion testlar Docker’dagi haqiqiy PostgreSQL 17 bilan ishlaydi, vendor oʻrnini esa tasodifiy portdagi WireMock egallaydi. Har bir testda uning xatti-harakati oʻziga xos: tasdiqlash, rad etish, 503 qaytarish yoki taymautdan uzoqroq jim turish.
+
+**CI.** Xuddi shu 81 ta test GitHub Actions’da `main`ga har bir push va har bir pull request’da ishga tushadi (`.github/workflows/ci.yml`): Ubuntu, JDK 21, `./mvnw -B -ntp verify` buyrugʻi. Testcontainers uchun Docker u yerda allaqachon bor. Oxirgi ishga tushirish natijasi README boshidagi «tests» beydjida koʻrinadi. Testlar muvaffaqiyatsiz tugasa, ularning hisobotlari `test-reports` artefaktida saqlanadi.
 
 <a id="uz-api" name="uz-api"></a>
 
@@ -1717,6 +1726,7 @@ Barcha parametrlar `src/main/resources/application.yml` faylida. Istalganini muh
 
 ```text
 .
+├── .github/workflows/ci.yml    # CI: har bir push’da yigʻish va testlar
 ├── Dockerfile                  # multi-stage: Maven bilan yigʻish → JRE’li obraz
 ├── docker-compose.yml          # ilova + PostgreSQL + vendor imitatsiyasi
 ├── .env.example                # lokal parollar va kalit namunasi
@@ -1760,6 +1770,7 @@ Loyiha bosqichma-bosqich yigʻildi, har bir bosqich – alohida kommit. [Kommitl
 | 9 | OpenAPI va Swagger UI | `feat: add openapi spec and swagger ui` |
 | 10 | JWT-autentifikatsiya | `feat: add jwt authentication` |
 | 11 | ushbu README | `docs: add readme` |
+| 12 | CI: GitHub Actions’da yigʻish va testlar | `ci: add github actions workflow` |
 
 <div align="right"><a href="#top">⬆️ Yuqoriga</a></div>
 
@@ -1802,6 +1813,7 @@ Loyiha bosqichma-bosqich yigʻildi, har bir bosqich – alohida kommit. [Kommitl
 | ✅ | One docker-compose command for the app, PostgreSQL and the vendor stub | `docker compose up --build`, the stub is WireMock |
 | ⭐ | JWT authentication | login with username and password, HS256 token, everyone sees only their own data |
 | ⭐ | OpenAPI/Swagger | Swagger UI with examples and the Authorize button |
+| ➕ | Beyond the assignment: CI | GitHub Actions on every push and pull request: the build and all 81 tests, a badge at the top of the README |
 
 <a id="en-stack" name="en-stack"></a>
 
@@ -1815,7 +1827,7 @@ Loyiha bosqichma-bosqich yigʻildi, har bir bosqich – alohida kommit. [Kommitl
 | Security | Spring Security OAuth2 Resource Server: JWT (HS256), bcrypt passwords |
 | API docs | springdoc-openapi 3, Swagger UI |
 | Tests | JUnit 6, Mockito, AssertJ, Testcontainers 2, WireMock 3.13 |
-| Build and run | Maven Wrapper, Docker (multi-stage), Docker Compose |
+| Build and run | Maven Wrapper, Docker (multi-stage), Docker Compose, CI on GitHub Actions |
 
 <a id="en-run" name="en-run"></a>
 
@@ -1927,6 +1939,8 @@ On Windows without Git Bash: `mvnw.cmd test`. There are **81 tests**; a full run
 | `OpenApiTest` | integration | the OpenAPI spec and Swagger UI |
 
 Integration tests use a real PostgreSQL 17 in Docker, and WireMock on a random port plays the vendor. Each test sets its own behaviour: approve, decline, answer 503 or stay silent longer than the timeout.
+
+**CI.** The same 81 tests run on GitHub Actions on every push to `main` and on every pull request (`.github/workflows/ci.yml`): Ubuntu, JDK 21, `./mvnw -B -ntp verify`. The runner already has Docker for Testcontainers. The result of the last run is the "tests" badge at the top of the README. If tests fail, their reports are kept as the `test-reports` artifact.
 
 <a id="en-api" name="en-api"></a>
 
@@ -2530,6 +2544,7 @@ All parameters live in `src/main/resources/application.yml`. Any of them can be 
 
 ```text
 .
+├── .github/workflows/ci.yml    # CI: the build and tests on every push
 ├── Dockerfile                  # multi-stage: Maven build → image with the JRE
 ├── docker-compose.yml          # app + PostgreSQL + vendor stub
 ├── .env.example                # example of local passwords and the secret
@@ -2573,6 +2588,7 @@ The project was built step by step, every stage is a separate commit. The [commi
 | 9 | OpenAPI and Swagger UI | `feat: add openapi spec and swagger ui` |
 | 10 | JWT authentication | `feat: add jwt authentication` |
 | 11 | this README | `docs: add readme` |
+| 12 | CI: build and tests on GitHub Actions | `ci: add github actions workflow` |
 
 <div align="right"><a href="#top">⬆️ Back to top</a></div>
 
