@@ -50,8 +50,8 @@ public abstract class IntegrationTest {
     @DynamicPropertySource
     static void testProperties(DynamicPropertyRegistry registry) {
         registry.add("vendor.url", vendor::baseUrl);
-        // tests don't want to wait 12 s for a timeout
-        registry.add("vendor.read-timeout", () -> "1s");
+        // no test waits for this timeout ("no answer" is a 503 here), it only has to leave room for a slow CI machine
+        registry.add("vendor.read-timeout", () -> "5s");
         registry.add("vendor.retry-delay", () -> "10ms");
         // the retry job is called by hand in its own test
         registry.add("transfers.pending-retry.enabled", () -> "false");

@@ -31,8 +31,7 @@ class VendorClientTest {
 
     @BeforeEach
     void setUp() {
-        // short timeouts and pauses, so the tests take seconds and not minutes
-        client = clientFor(vendor.baseUrl());
+        client = clientFor(vendor.baseUrl(), Duration.ofSeconds(2));
     }
 
     @Test
@@ -84,16 +83,18 @@ class VendorClientTest {
 
     @Test
     void tooSlowAnswerIsRetriedLikeTemporaryError() {
+        // only this test needs a short timeout: the stub answers after 1 s
+        VendorClient impatientClient = clientFor(vendor.baseUrl(), Duration.ofMillis(300));
         vendor.stubFor(post(PAYMENTS).willReturn(okJson(answer("APPROVED")).withFixedDelay(1000)));
 
-        assertThatThrownBy(() -> client.confirmPayment(reference, 1L, 2L, amount))
+        assertThatThrownBy(() -> impatientClient.confirmPayment(reference, 1L, 2L, amount))
                 .isInstanceOf(VendorUnavailableException.class);
         vendor.verify(3, postRequestedFor(urlEqualTo(PAYMENTS)));
     }
 
     @Test
     void vendorIsDown() {
-        VendorClient clientWithoutVendor = clientFor("http://localhost:1");
+        VendorClient clientWithoutVendor = clientFor("http://localhost:1", Duration.ofSeconds(2));
 
         assertThatThrownBy(() -> clientWithoutVendor.confirmPayment(reference, 1L, 2L, amount))
                 .isInstanceOf(VendorUnavailableException.class);
@@ -120,8 +121,10 @@ class VendorClientTest {
                 .isInstanceOf(VendorUnavailableException.class);
     }
 
-    private VendorClient clientFor(String url) {
-        return new VendorClient(new VendorProperties(url, Duration.ofMillis(500), Duration.ofMillis(300), 3, Duration.ofMillis(10)));
+    // the read timeout covers the whole answer, body included, so a slow first call in a cold JVM
+    // must not hit it; pauses between attempts are short, so the tests take seconds and not minutes
+    private VendorClient clientFor(String url, Duration readTimeout) {
+        return new VendorClient(new VendorProperties(url, Duration.ofMillis(500), readTimeout, 3, Duration.ofMillis(10)));
     }
 
     private String answer(String status) {
